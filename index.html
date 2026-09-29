@@ -9,7 +9,8 @@
 <style>
 :root{
   color-scheme:light;
-  --blue:#0088FF; --red:#FF383C;
+  --blue:#6B0B0C; --red:#6B0B0C;
+  --lemon:#FFF8CA; --rose:#6B0B0C; --coffee:#2D120D; --botti:#CDE3E8;
   --label:#000; --label2:rgba(60,60,67,.6); --label3:rgba(60,60,67,.3);
   --fill:rgba(120,120,128,.16); --fill2:rgba(118,118,128,.12); --sep:rgba(60,60,67,.18);
   --green:#34C759; --yellow:#FFCC00; --teal:#0088FF; --pink:#FF2D55;
@@ -20,31 +21,33 @@
 html,body{margin:0;background:#fff;color:var(--label);font-family:var(--font);-webkit-font-smoothing:antialiased}
 button,input,textarea,select{font:inherit;color:inherit}
 button{-webkit-tap-highlight-color:transparent}
-:focus-visible{outline:3px solid rgba(0,136,255,.5);outline-offset:2px}
+:focus-visible{outline:3px solid rgba(107,11,12,.45);outline-offset:2px}
 
 /* Glass navigation bar */
 .nav{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
   padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 12px;border-bottom:.5px solid transparent;transition:border-color .2s}
 .nav.scrolled{border-bottom-color:var(--sep)}
 .nav-in{max-width:1100px;margin:0 auto}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
 h1{font-size:34px;line-height:41px;font-weight:700;letter-spacing:.4px;margin:0}
 .btns{display:flex;gap:10px;align-items:center}
 .circle{width:44px;height:44px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;
-  background:rgba(255,255,255,.8);box-shadow:0 0 0 .5px rgba(0,0,0,.08),0 4px 14px rgba(0,0,0,.08)}
+  background:var(--coffee);color:var(--lemon);box-shadow:0 4px 14px rgba(45,18,13,.3)}
 .circle svg{width:20px;height:20px}
-.circle.blue{background:var(--blue);color:#fff;box-shadow:0 4px 14px rgba(0,136,255,.35)}
+.circle.blue{background:var(--rose);color:var(--lemon);box-shadow:0 4px 14px rgba(107,11,12,.35)}
+.sheet-bar .circle{background:var(--fill);color:var(--label);box-shadow:none}
 .pill{height:48px;border-radius:100px;border:0;padding:0 22px;font-size:17px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-.pill.blue{background:var(--blue);color:#fff}
+.pill.blue{background:var(--rose);color:var(--lemon)}
+.pill.rand{height:44px;background:var(--coffee);color:var(--lemon);box-shadow:0 4px 14px rgba(45,18,13,.3)}
 .pill.grey{background:var(--fill);color:var(--label)}
 .pill:active,.circle:active{transform:scale(.97)}
 
 /* Filters */
-.filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center;justify-content:center}
 .seg{display:flex;background:var(--fill2);border-radius:100px;padding:2px;gap:2px;overflow-x:auto;scrollbar-width:none}
 .seg::-webkit-scrollbar{display:none}
 .seg button{border:0;background:transparent;border-radius:100px;padding:6px 13px;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer;min-height:28px}
-.seg button[aria-pressed="true"]{background:#fff;font-weight:600;box-shadow:0 3px 8px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)}
+.seg button[aria-pressed="true"]{background:var(--rose);color:var(--lemon);font-weight:600;box-shadow:0 3px 8px rgba(107,11,12,.25)}
 .popup{appearance:none;-webkit-appearance:none;border:0;background:var(--fill2);border-radius:100px;height:32px;padding:0 32px 0 14px;font-size:13px;font-weight:600;cursor:pointer;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14'%3E%3Cpath d='M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9' fill='none' stroke='%233C3C43' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 12px center}
@@ -54,18 +57,19 @@ main{max-width:1100px;margin:0 auto;padding:12px 20px calc(env(safe-area-inset-b
 section h2{font-size:22px;line-height:28px;font-weight:700;margin:22px 0 12px}
 .notes{columns:4 240px;column-gap:14px}
 .card{break-inside:avoid;display:block;width:100%;text-align:left;border:0;cursor:pointer;margin:0 0 14px;padding:16px 16px 14px;border-radius:26px;
-  background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.06);position:relative;overflow:hidden}
-.card::before{content:"";position:absolute;inset:0;background:var(--tint);opacity:.10;pointer-events:none}
-.card>*{position:relative}
-.dot{width:10px;height:10px;border-radius:50%;background:var(--tint);margin-bottom:10px}
+  background:var(--bg);color:var(--fg);box-shadow:0 6px 20px rgba(45,18,13,.10);position:relative;overflow:hidden}
+.c0{--bg:var(--lemon);--fg:var(--rose);--tag:rgba(107,11,12,.10)}
+.c1{--bg:var(--rose);--fg:var(--lemon);--tag:rgba(255,248,202,.16)}
+.c2{--bg:var(--coffee);--fg:var(--botti);--tag:rgba(205,227,232,.14)}
+.c3{--bg:var(--botti);--fg:var(--coffee);--tag:rgba(45,18,13,.09)}
 .card h3{font-size:17px;line-height:22px;font-weight:600;margin:0 0 4px}
-.card p{font-size:15px;line-height:20px;color:var(--label2);margin:0 0 10px}
+.card p{font-size:15px;line-height:20px;color:var(--fg);opacity:.78;margin:0 0 10px}
 .tags{display:flex;flex-wrap:wrap;gap:6px}
-.tags span{font-size:12px;font-weight:600;padding:4px 9px;border-radius:100px;background:rgba(255,255,255,.75);color:rgba(60,60,67,.85)}
-.by{font-size:13px;color:var(--label2);margin-top:10px}
+.tags span{font-size:12px;font-weight:600;padding:4px 9px;border-radius:100px;background:var(--tag);color:var(--fg)}
+.by{font-size:13px;color:var(--fg);opacity:.7;margin-top:10px}
 .empty{text-align:center;color:var(--label2);font-size:17px;padding:70px 20px}
 .empty strong{display:block;color:var(--label);font-size:20px;margin-bottom:6px}
-.demo{background:var(--fill2);border-radius:14px;padding:10px 14px;font-size:13px;color:var(--label2);margin-top:12px}
+.demo{text-align:center;background:var(--fill2);border-radius:14px;padding:10px 14px;font-size:13px;color:var(--label2);margin-top:12px}
 
 /* Alerts */
 dialog{border:0;padding:0;background:transparent;overflow:visible;max-width:none;max-height:none}
@@ -76,6 +80,10 @@ dialog::backdrop{background:rgba(0,0,0,.25)}
 .alert h2{font-size:17px;line-height:22px;font-weight:600;margin:0 0 8px}
 .alert .msg{font-size:17px;line-height:22px;margin:0}
 .alert .acts{display:flex;flex-direction:column;gap:8px}
+.alert.welcome{background:var(--lemon)}
+.alert.welcome h2{color:var(--rose)}
+.alert.welcome .msg{color:var(--coffee)}
+.alert .warn{color:var(--rose);font-weight:700;margin-top:12px}
 .alert .acts.row{flex-direction:row}
 .alert .acts .pill{width:100%;padding:0 12px}
 .alert .card{cursor:default;margin:0 0 14px;box-shadow:none}
@@ -101,7 +109,7 @@ dialog.sheet[open]{animation:up .35s cubic-bezier(.2,.9,.3,1)}
 .opt{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:0;background:transparent;padding:13px 16px;text-align:left;cursor:pointer;min-height:52px}
 .opt b{display:block;font-size:17px;font-weight:400}
 .opt small{display:block;font-size:13px;color:var(--label2);margin-top:2px}
-.opt .check{width:20px;height:20px;color:var(--blue);opacity:0;flex:none}
+.opt .check{width:20px;height:20px;color:var(--rose);opacity:0;flex:none}
 .opt[aria-pressed="true"] .check{opacity:1}
 .hint{font-size:13px;color:var(--label2);margin:8px 16px 0}
 .sub{margin-top:18px}
@@ -116,9 +124,7 @@ dialog.sheet[open]{animation:up .35s cubic-bezier(.2,.9,.3,1)}
   <div class="top">
     <h1>Miss You Guys</h1>
     <div class="btns">
-      <button class="circle" id="surpriseBtn" aria-label="Surprise me with a random idea">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
-      </button>
+      <button class="pill rand" id="surpriseBtn">Randomiser</button>
       <button class="circle blue" id="addBtn" aria-label="Add an idea">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
@@ -129,9 +135,10 @@ dialog.sheet[open]{animation:up .35s cubic-bezier(.2,.9,.3,1)}
 </div></header>
 <main id="board"></main>
 
-<dialog class="alertd" id="welcome"><div class="alert">
+<dialog class="alertd" id="welcome"><div class="alert welcome">
   <div class="tm"><h2>Welcome to Miss You Guys</h2>
-  <p class="msg">A pinboard for date ideas and activities created by Rimmy, Femi, Youssif and Marcus.</p></div>
+  <p class="msg">A pinboard for date ideas and activities created by Rimmy, Femi, Youssif and Marcus.</p>
+  <p class="msg warn">Be careful! Ideas can't be deleted so spell carefully!</p></div>
   <div class="acts"><button class="pill blue" id="welcomeClose">Get started</button></div>
 </div></dialog>
 <dialog class="alertd" id="shuffle"><div class="alert" id="shufBody"></div></dialog>
@@ -192,11 +199,10 @@ function filtered(){
   });
 }
 
-function cardHTML(i, inAlert=false){
+function cardHTML(i, inAlert=false, n=0){
   const tags = [i.city ? "📍 "+esc(i.city)+(i.place?", "+esc(i.place):"") : "Works anywhere", COSTS[i.cost], i.weather && i.weather!=="any" ? WEATHER[i.weather] : null].filter(Boolean);
   const tag = inAlert ? "div" : "button";
-  return `<${tag} class="card" data-id="${esc(i.id)}" style="--tint:${TINT[i.cost]}">
-    <div class="dot"></div><h3>${esc(i.title)}</h3>${i.details?`<p>${esc(i.details)}</p>`:""}
+  return `<${tag} class="card c${n%4}" data-id="${esc(i.id)}"><h3>${esc(i.title)}</h3>${i.details?`<p>${esc(i.details)}</p>`:""}
     <div class="tags">${tags.map(t=>`<span>${t}</span>`).join("")}</div>
     <div class="by">Added by ${esc(i.submitted_by)}</div></${tag}>`;
 }
@@ -222,9 +228,10 @@ function render(){
   const list = filtered(), board = document.getElementById("board");
   if (!ideas.length){ board.innerHTML = '<div class="empty"><strong>No ideas yet</strong>Tap + to pin the first one.</div>'; return; }
   if (!list.length){ board.innerHTML = '<div class="empty"><strong>Nothing matches</strong>Try removing a filter.</div>'; return; }
+  let n = 0;
   board.innerHTML = Object.entries(SETTINGS).map(([k,label]) => {
     const g = list.filter(i=>i.setting===k);
-    return g.length ? `<section><h2>${label}</h2><div class="notes">${g.map(i=>cardHTML(i)).join("")}</div></section>` : "";
+    return g.length ? `<section><h2>${label}</h2><div class="notes">${g.map(i=>cardHTML(i,false,n++)).join("")}</div></section>` : "";
   }).join("");
 }
 
@@ -244,7 +251,7 @@ function showOne(idea, random=true){
   const body = document.getElementById("shufBody");
   body.innerHTML = !idea
     ? `<div class="tm"><h2>No ideas match</h2><p class="msg">Remove a filter or add a new idea.</p></div><div class="acts"><button class="pill grey" id="closeS">OK</button></div>`
-    : `${cardHTML(idea,true)}<div class="acts ${random?"row":""}"><button class="pill grey" id="closeS">Done</button>${random?'<button class="pill blue" id="again">Another</button>':""}</div>`;
+    : `${cardHTML(idea,true,Math.max(0,ideas.indexOf(idea)))}<div class="acts ${random?"row":""}"><button class="pill grey" id="closeS">Done</button>${random?'<button class="pill blue" id="again">Another</button>':""}</div>`;
   if (!shuf.open) shuf.showModal();
   document.getElementById("closeS").onclick = () => shuf.close();
   const a = document.getElementById("again"); if (a) a.onclick = surprise;
