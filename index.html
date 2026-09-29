@@ -3,111 +3,182 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>The Date Board</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<meta name="theme-color" content="#ffffff">
+<title>Miss You Guys</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
-:root{--board:#E9EDEB;--grid:#D6DDDA;--ink:#1B2433;--soft:#5A6475;--marker:#D93A2B;
---free:#C9EBB4;--low:#FFE57A;--mid:#A9D9F2;--high:#FFB8CB;--panel:#fff;
---hand:"Kalam","Comic Sans MS",cursive;--sans:"Archivo",system-ui,-apple-system,sans-serif;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--board:#1E2622;--grid:#2A3430;--ink:#EEF1EC;--soft:#A7B2AB;--panel:#27302C}}
+:root{
+  color-scheme:light;
+  --blue:#0088FF; --red:#FF383C;
+  --label:#000; --label2:rgba(60,60,67,.6); --label3:rgba(60,60,67,.3);
+  --fill:rgba(120,120,128,.16); --fill2:rgba(118,118,128,.12); --sep:rgba(60,60,67,.18);
+  --green:#34C759; --yellow:#FFCC00; --teal:#0088FF; --pink:#FF2D55;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  box-sizing:border-box;
+}
 *,*::before,*::after{box-sizing:inherit}
-html,body{margin:0}
-body{background:var(--board);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;color:var(--ink);font-family:var(--sans);min-height:100vh}
+html,body{margin:0;background:#fff;color:var(--label);font-family:var(--font);-webkit-font-smoothing:antialiased}
 button,input,textarea,select{font:inherit;color:inherit}
-:focus-visible{outline:3px solid var(--marker);outline-offset:2px}
-.wrap{max-width:1200px;margin:0 auto;padding:24px 20px 80px}
-header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px}
-h1{font-weight:900;font-stretch:125%;font-size:clamp(2.4rem,8vw,5rem);line-height:.9;letter-spacing:-.02em;margin:0}
-h1 small{display:block;font-family:var(--hand);font-weight:400;font-stretch:100%;font-size:1.1rem;letter-spacing:0;color:var(--soft);margin-top:10px}
-.actions{display:flex;gap:10px}
-.btn{border:2.5px solid var(--ink);background:var(--panel);padding:11px 18px;border-radius:999px;font-weight:700;cursor:pointer}
-.btn.primary{background:var(--ink);color:var(--board)}
-.btn.red{background:var(--marker);border-color:var(--marker);color:#fff}
-.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:28px}
-.chip{border:2px solid var(--ink);background:transparent;padding:6px 13px;border-radius:999px;font-size:.9rem;font-weight:600;cursor:pointer}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--board)}
-select{border:2px solid var(--ink);background:var(--panel);padding:7px 12px;border-radius:999px;font-weight:600;font-size:.9rem}
-.sep{width:1px;height:24px;background:var(--soft);opacity:.5;margin:0 4px}
-.demo{font-family:var(--hand);background:var(--low);color:#1B2433;padding:8px 14px;display:inline-block;transform:rotate(-1deg);margin-bottom:18px}
-section h2{font-family:var(--hand);font-weight:700;font-size:2rem;margin:10px 0 14px;display:inline-block;border-bottom:4px solid var(--marker);line-height:1.1}
-.notes{columns:4 230px;column-gap:22px;margin-bottom:30px}
-.note{break-inside:avoid;margin:0 0 26px;padding:24px 18px 16px;color:#1B2433;position:relative;box-shadow:2px 6px 0 rgba(27,36,51,.18);cursor:pointer;border:0;text-align:left;width:100%;display:block}
-.note::before{content:"";position:absolute;top:-9px;left:50%;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:var(--marker);box-shadow:inset -3px -3px 0 rgba(0,0,0,.2)}
-.note h3{font-family:var(--hand);font-size:1.45rem;line-height:1.15;margin:0 0 6px;font-weight:700}
-.note p{font-family:var(--hand);margin:0 0 12px;line-height:1.35}
-.tags{display:flex;flex-wrap:wrap;gap:6px;font-size:.78rem;font-weight:600}
-.tags span{border:1.5px solid rgba(27,36,51,.5);padding:2px 8px;border-radius:999px}
-.by{font-family:var(--hand);font-size:.95rem;margin-top:10px;opacity:.75}
-.empty{font-family:var(--hand);font-size:1.3rem;padding:40px 0}
-dialog{border:0;padding:0;background:transparent;max-width:min(560px,92vw);width:100%}
-dialog::backdrop{background:rgba(20,26,24,.6)}
-.sheet{background:var(--panel);color:var(--ink);border-radius:18px;padding:26px;border:2.5px solid var(--ink)}
-.step{font-size:.85rem;color:var(--soft);font-weight:600}
-.sheet h2{font-weight:800;font-stretch:112%;font-size:1.7rem;margin:6px 0 18px;line-height:1.1}
-.sheet label{display:block;font-weight:600;margin:12px 0 6px}
-.sheet input,.sheet textarea{width:100%;padding:12px;border:2px solid var(--ink);border-radius:10px;background:var(--board)}
-.options{display:grid;gap:10px}
-.opt{border:2px solid var(--ink);background:transparent;padding:14px;border-radius:12px;text-align:left;cursor:pointer;font-weight:600}
-.opt small{display:block;font-weight:400;color:var(--soft)}
-.opt[aria-pressed="true"]{background:var(--ink);color:var(--board)}
-.opt[aria-pressed="true"] small{color:var(--board)}
-.row{display:flex;justify-content:space-between;gap:10px;margin-top:22px}
-.err{color:var(--marker);font-weight:600;margin-top:10px;min-height:1.2em}
-.big{transform:rotate(-2deg);font-size:1.15em;cursor:default;margin:10px 0 20px}
-.big h3{font-size:2rem}
-@media (prefers-reduced-motion:no-preference){.big{animation:drop .45s cubic-bezier(.2,1.4,.4,1)}@keyframes drop{from{transform:translateY(-40px) rotate(-10deg);opacity:0}}}
+button{-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid rgba(0,136,255,.5);outline-offset:2px}
+
+/* Glass navigation bar */
+.nav{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 12px;border-bottom:.5px solid transparent;transition:border-color .2s}
+.nav.scrolled{border-bottom-color:var(--sep)}
+.nav-in{max-width:1100px;margin:0 auto}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:34px;line-height:41px;font-weight:700;letter-spacing:.4px;margin:0}
+.btns{display:flex;gap:10px;align-items:center}
+.circle{width:44px;height:44px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;
+  background:rgba(255,255,255,.8);box-shadow:0 0 0 .5px rgba(0,0,0,.08),0 4px 14px rgba(0,0,0,.08)}
+.circle svg{width:20px;height:20px}
+.circle.blue{background:var(--blue);color:#fff;box-shadow:0 4px 14px rgba(0,136,255,.35)}
+.pill{height:48px;border-radius:100px;border:0;padding:0 22px;font-size:17px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.pill.blue{background:var(--blue);color:#fff}
+.pill.grey{background:var(--fill);color:var(--label)}
+.pill:active,.circle:active{transform:scale(.97)}
+
+/* Filters */
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+.seg{display:flex;background:var(--fill2);border-radius:100px;padding:2px;gap:2px;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{border:0;background:transparent;border-radius:100px;padding:6px 13px;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer;min-height:28px}
+.seg button[aria-pressed="true"]{background:#fff;font-weight:600;box-shadow:0 3px 8px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)}
+.popup{appearance:none;-webkit-appearance:none;border:0;background:var(--fill2);border-radius:100px;height:32px;padding:0 32px 0 14px;font-size:13px;font-weight:600;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14'%3E%3Cpath d='M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9' fill='none' stroke='%233C3C43' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center}
+
+/* Board */
+main{max-width:1100px;margin:0 auto;padding:12px 20px calc(env(safe-area-inset-bottom,0px) + 60px)}
+section h2{font-size:22px;line-height:28px;font-weight:700;margin:22px 0 12px}
+.notes{columns:4 240px;column-gap:14px}
+.card{break-inside:avoid;display:block;width:100%;text-align:left;border:0;cursor:pointer;margin:0 0 14px;padding:16px 16px 14px;border-radius:26px;
+  background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.06);position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;inset:0;background:var(--tint);opacity:.10;pointer-events:none}
+.card>*{position:relative}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--tint);margin-bottom:10px}
+.card h3{font-size:17px;line-height:22px;font-weight:600;margin:0 0 4px}
+.card p{font-size:15px;line-height:20px;color:var(--label2);margin:0 0 10px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{font-size:12px;font-weight:600;padding:4px 9px;border-radius:100px;background:rgba(255,255,255,.75);color:rgba(60,60,67,.85)}
+.by{font-size:13px;color:var(--label2);margin-top:10px}
+.empty{text-align:center;color:var(--label2);font-size:17px;padding:70px 20px}
+.empty strong{display:block;color:var(--label);font-size:20px;margin-bottom:6px}
+.demo{background:var(--fill2);border-radius:14px;padding:10px 14px;font-size:13px;color:var(--label2);margin-top:12px}
+
+/* Alerts */
+dialog{border:0;padding:0;background:transparent;overflow:visible;max-width:none;max-height:none}
+dialog::backdrop{background:rgba(0,0,0,.25)}
+.alert{width:min(300px,86vw);border-radius:34px;padding:14px;background:rgba(255,255,255,.92);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);
+  box-shadow:0 20px 60px rgba(0,0,0,.2),0 0 0 .5px rgba(0,0,0,.05)}
+.alert .tm{padding:8px 8px 22px}
+.alert h2{font-size:17px;line-height:22px;font-weight:600;margin:0 0 8px}
+.alert .msg{font-size:17px;line-height:22px;margin:0}
+.alert .acts{display:flex;flex-direction:column;gap:8px}
+.alert .acts.row{flex-direction:row}
+.alert .acts .pill{width:100%;padding:0 12px}
+.alert .card{cursor:default;margin:0 0 14px;box-shadow:none}
+dialog.alertd[open]{animation:pop .28s cubic-bezier(.2,1.1,.4,1)}
+@keyframes pop{from{transform:scale(1.12);opacity:0}}
+
+/* Sheet */
+dialog.sheet{margin:auto auto 0;width:100%;max-width:560px}
+dialog.sheet[open]{animation:up .35s cubic-bezier(.2,.9,.3,1)}
+@keyframes up{from{transform:translateY(100%)}}
+.sheet-in{background:#fff;border-radius:38px 38px 0 0;padding:8px 16px calc(env(safe-area-inset-bottom,0px) + 18px);min-height:62vh;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,.12)}
+@media (min-width:600px){dialog.sheet{margin:auto}.sheet-in{border-radius:38px;min-height:560px}}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--label3);margin:0 auto 6px}
+.sheet-bar{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;margin-bottom:8px}
+.sheet-bar .t{text-align:center;font-size:17px;font-weight:600}
+.sheet-body{flex:1}
+.step{font-size:13px;color:var(--label2);text-align:center;margin:0 0 4px}
+.q{font-size:28px;line-height:34px;font-weight:700;text-align:center;margin:0 0 22px}
+.group{background:var(--fill2);border-radius:26px;overflow:hidden}
+.group input,.group textarea{display:block;width:100%;border:0;background:transparent;padding:15px 16px;font-size:17px;outline:none;resize:none}
+.group input::placeholder,.group textarea::placeholder{color:var(--label3)}
+.group>*+*{border-top:.5px solid var(--sep)}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:0;background:transparent;padding:13px 16px;text-align:left;cursor:pointer;min-height:52px}
+.opt b{display:block;font-size:17px;font-weight:400}
+.opt small{display:block;font-size:13px;color:var(--label2);margin-top:2px}
+.opt .check{width:20px;height:20px;color:var(--blue);opacity:0;flex:none}
+.opt[aria-pressed="true"] .check{opacity:1}
+.hint{font-size:13px;color:var(--label2);margin:8px 16px 0}
+.sub{margin-top:18px}
+.err{color:var(--red);font-size:15px;text-align:center;min-height:22px;margin:12px 0 4px}
+.sheet-acts{display:flex;gap:10px}
+.sheet-acts .pill{flex:1}
+@media (prefers-reduced-motion:reduce){dialog[open]{animation:none!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-<header>
-  <h1>The Date Board<small>Date ideas from friends, pinned and sorted</small></h1>
-  <div class="actions">
-    <button class="btn red" id="surpriseBtn">Surprise me</button>
-    <button class="btn primary" id="addBtn">Add an idea</button>
+<header class="nav" id="nav"><div class="nav-in">
+  <div class="top">
+    <h1>Miss You Guys</h1>
+    <div class="btns">
+      <button class="circle" id="surpriseBtn" aria-label="Surprise me with a random idea">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+      </button>
+      <button class="circle blue" id="addBtn" aria-label="Add an idea">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
   </div>
-</header>
-<div id="demo"></div>
-<div class="filters" id="filters"></div>
+  <div id="demo"></div>
+  <div class="filters" id="filters"></div>
+</div></header>
 <main id="board"></main>
-</div>
-<dialog id="wizard"><div class="sheet" id="wizBody"></div></dialog>
-<dialog id="shuffle"><div class="sheet" id="shufBody"></div></dialog>
+
+<dialog class="alertd" id="welcome"><div class="alert">
+  <div class="tm"><h2>Welcome to Miss You Guys</h2>
+  <p class="msg">A pinboard for date ideas and activities created by Rimmy, Femi, Youssif and Marcus.</p></div>
+  <div class="acts"><button class="pill blue" id="welcomeClose">Get started</button></div>
+</div></dialog>
+<dialog class="alertd" id="shuffle"><div class="alert" id="shufBody"></div></dialog>
+<dialog class="sheet" id="wizard"><div class="sheet-in" id="wizBody"></div></dialog>
+
 <script>
-// PASTE your Supabase details here
-const SUPABASE_URL = "";
-const SUPABASE_ANON_KEY = "";
+const SUPABASE_URL = "https://bfkfunthrsxxsvkljgdi.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_6KnKwfgbWbZk1v7xCznDMg_nWFjoaOY";
 
 const DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY;
 const db = DEMO ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const SETTINGS = {home:"At home", indoor:"Out, indoors", outdoor:"Out, outdoors"};
 const COSTS = {free:"Free", low:"Cheap", mid:"Mid-range", high:"Splurge"};
+const TINT = {free:"var(--green)", low:"var(--yellow)", mid:"var(--teal)", high:"var(--pink)"};
 const WEATHER = {any:"Any weather", warm:"Warm and sunny", cool:"Cool and mild", wet:"Rain or snow"};
+const ICON = {
+  x:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  check:'<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  back:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>'
+};
 let ideas = [];
 let f = {city:"all", setting:null, cost:null};
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const cityKey = s => (s||"").trim().toLowerCase();
 const titleCase = s => s.trim().replace(/\s+/g," ").replace(/\b\w/g, c => c.toUpperCase());
-const tilt = id => { let h=0; for (const c of String(id)) h=(h*31+c.charCodeAt(0))|0; return ((Math.abs(h)%50)/10-2.5).toFixed(1); };
 const store = { get(k){ try{return localStorage.getItem(k)}catch{return null} }, set(k,v){ try{localStorage.setItem(k,v)}catch{} } };
+
+// Welcome message: shows once per device, closable
+const welcome = document.getElementById("welcome");
+if (!store.get("myg-welcomed")) welcome.showModal();
+document.getElementById("welcomeClose").onclick = () => { store.set("myg-welcomed","1"); welcome.close(); };
+welcome.addEventListener("cancel", () => store.set("myg-welcomed","1"));
+
+// Nav hairline on scroll
+addEventListener("scroll", () => document.getElementById("nav").classList.toggle("scrolled", scrollY > 4), {passive:true});
 
 async function load(){
   if (DEMO){
-    document.getElementById("demo").innerHTML = '<div class="demo">Demo mode: ideas disappear on refresh until you add your Supabase details.</div>';
+    document.getElementById("demo").innerHTML = '<div class="demo">Demo mode: ideas aren\'t saved until Supabase details are added.</div>';
     ideas = [
-      {id:"a",title:"Blind taste test night",details:"Buy five cheap chocolates, rate them blind, loser plans the next date.",setting:"home",city:null,cost:"low",weather:null,submitted_by:"Qs"},
-      {id:"b",title:"Sunrise at the desert",details:"Drive out early, bring karak and a blanket.",setting:"outdoor",city:"Dubai",cost:"free",weather:"cool",submitted_by:"Qs"},
-      {id:"c",title:"Pottery class",details:"",setting:"indoor",city:null,cost:"mid",weather:null,submitted_by:"Sam"},
-      {id:"d",title:"Picnic on Primrose Hill",details:"Golden hour, then dinner in Camden.",setting:"outdoor",city:"London",cost:"low",weather:"warm",submitted_by:"Jay"}];
+      {id:"a",title:"Blind taste test night",details:"Buy five cheap chocolates, rate them blind, loser plans the next date.",setting:"home",city:null,cost:"low",weather:null,submitted_by:"Marcus"},
+      {id:"b",title:"Sunrise in the desert",details:"Drive out early, bring karak and a blanket.",setting:"outdoor",city:"Dubai",cost:"free",weather:"cool",submitted_by:"Marcus"}];
     return render();
   }
   const {data, error} = await db.from("date_ideas").select("*").order("created_at",{ascending:false});
-  if (error){ document.getElementById("board").innerHTML = '<p class="empty">Couldn\'t load ideas. Check your Supabase URL and key, then refresh.</p>'; return; }
+  if (error){ console.error(error); document.getElementById("board").innerHTML = '<div class="empty"><strong>Couldn\'t load ideas</strong>Check your connection, then refresh.</div>'; return; }
   ideas = data; render();
 }
 
@@ -121,113 +192,127 @@ function filtered(){
   });
 }
 
-function noteHTML(i, big=false){
+function cardHTML(i, inAlert=false){
   const tags = [i.city ? "📍 "+esc(i.city)+(i.place?", "+esc(i.place):"") : "Works anywhere", COSTS[i.cost], i.weather && i.weather!=="any" ? WEATHER[i.weather] : null].filter(Boolean);
-  return `<${big?"div":"button"} class="note${big?" big":""}" data-id="${esc(i.id)}" style="background:var(--${i.cost});transform:rotate(${big?-2:tilt(i.id)}deg)">
-    <h3>${esc(i.title)}</h3>${i.details?`<p>${esc(i.details)}</p>`:""}
+  const tag = inAlert ? "div" : "button";
+  return `<${tag} class="card" data-id="${esc(i.id)}" style="--tint:${TINT[i.cost]}">
+    <div class="dot"></div><h3>${esc(i.title)}</h3>${i.details?`<p>${esc(i.details)}</p>`:""}
     <div class="tags">${tags.map(t=>`<span>${t}</span>`).join("")}</div>
-    <div class="by">from ${esc(i.submitted_by)}</div></${big?"div":"button"}>`;
+    <div class="by">Added by ${esc(i.submitted_by)}</div></${tag}>`;
 }
 
+function seg(group, map, allLabel){
+  const items = [[null, allLabel], ...Object.entries(map)];
+  return `<div class="seg" role="group">${items.map(([k,v]) => `<button data-g="${group}" data-v="${k??""}" aria-pressed="${f[group]===k}">${v}</button>`).join("")}</div>`;
+}
 function renderFilters(){
   const cities = [...new Map(ideas.filter(i=>i.city).map(i=>[cityKey(i.city), titleCase(i.city)])).entries()].sort();
-  const chips = (group, map) => Object.entries(map).map(([k,v]) => `<button class="chip" data-g="${group}" data-v="${k}" aria-pressed="${f[group]===k}">${v}</button>`).join("");
   document.getElementById("filters").innerHTML = `
-    <select id="citySel" aria-label="City">
+    <select class="popup" id="citySel" aria-label="City">
       <option value="all">All cities</option><option value="anywhere">Works anywhere</option>
-      ${cities.map(([k,v])=>`<option value="${esc(k)}">${esc(v)} + anywhere</option>`).join("")}
-    </select><span class="sep"></span>${chips("setting",SETTINGS)}<span class="sep"></span>${chips("cost",COSTS)}`;
+      ${cities.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("")}
+    </select>
+    ${seg("setting",{home:"Home",indoor:"Indoors",outdoor:"Outdoors"},"All")}
+    ${seg("cost",COSTS,"Any price")}`;
   document.getElementById("citySel").value = f.city;
 }
 
 function render(){
   renderFilters();
-  const list = filtered();
-  const board = document.getElementById("board");
-  if (!ideas.length){ board.innerHTML = '<p class="empty">The board is empty. Pin the first date idea.</p>'; return; }
-  if (!list.length){ board.innerHTML = '<p class="empty">Nothing matches those filters. Try removing one.</p>'; return; }
+  const list = filtered(), board = document.getElementById("board");
+  if (!ideas.length){ board.innerHTML = '<div class="empty"><strong>No ideas yet</strong>Tap + to pin the first one.</div>'; return; }
+  if (!list.length){ board.innerHTML = '<div class="empty"><strong>Nothing matches</strong>Try removing a filter.</div>'; return; }
   board.innerHTML = Object.entries(SETTINGS).map(([k,label]) => {
-    const group = list.filter(i=>i.setting===k);
-    return group.length ? `<section><h2>${label}</h2><div class="notes">${group.map(i=>noteHTML(i)).join("")}</div></section>` : "";
+    const g = list.filter(i=>i.setting===k);
+    return g.length ? `<section><h2>${label}</h2><div class="notes">${g.map(i=>cardHTML(i)).join("")}</div></section>` : "";
   }).join("");
 }
 
 document.getElementById("filters").addEventListener("click", e => {
-  const c = e.target.closest(".chip"); if (!c) return;
-  f[c.dataset.g] = f[c.dataset.g] === c.dataset.v ? null : c.dataset.v; render();
+  const b = e.target.closest(".seg button"); if (!b) return;
+  f[b.dataset.g] = b.dataset.v || null; render();
 });
 document.getElementById("filters").addEventListener("change", e => { if (e.target.id==="citySel"){ f.city = e.target.value; render(); } });
 document.getElementById("board").addEventListener("click", e => {
-  const n = e.target.closest(".note"); if (n) showOne(ideas.find(i=>String(i.id)===n.dataset.id), false);
+  const c = e.target.closest(".card"); if (c) showOne(ideas.find(i=>String(i.id)===c.dataset.id), false);
 });
 
 // Surprise me
 const shuf = document.getElementById("shuffle");
+let last = null;
 function showOne(idea, random=true){
   const body = document.getElementById("shufBody");
-  if (!idea){ body.innerHTML = `<h2>No ideas match</h2><p>Loosen the filters or add a new idea.</p><div class="row"><span></span><button class="btn" id="closeS">Close</button></div>`; }
-  else body.innerHTML = `${noteHTML(idea,true)}<div class="row"><button class="btn" id="closeS">Close</button>${random?'<button class="btn red" id="again">Another one</button>':""}</div>`;
+  body.innerHTML = !idea
+    ? `<div class="tm"><h2>No ideas match</h2><p class="msg">Remove a filter or add a new idea.</p></div><div class="acts"><button class="pill grey" id="closeS">OK</button></div>`
+    : `${cardHTML(idea,true)}<div class="acts ${random?"row":""}"><button class="pill grey" id="closeS">Done</button>${random?'<button class="pill blue" id="again">Another</button>':""}</div>`;
   if (!shuf.open) shuf.showModal();
   document.getElementById("closeS").onclick = () => shuf.close();
   const a = document.getElementById("again"); if (a) a.onclick = surprise;
 }
-let last = null;
 function surprise(){
   const list = filtered(); if (!list.length) return showOne(null);
   let pick; do { pick = list[Math.floor(Math.random()*list.length)]; } while (list.length>1 && pick===last);
   last = pick; showOne(pick);
 }
 document.getElementById("surpriseBtn").onclick = surprise;
+shuf.addEventListener("click", e => { if (e.target === shuf) shuf.close(); });
 
-// Add-an-idea questions
+// Add-an-idea sheet
 const wiz = document.getElementById("wizard");
 let d, stepIdx;
 const steps = () => ["what","where", ...(d.setting && d.setting!=="home" ? ["city"] : []), ...(d.setting==="outdoor" ? ["weather"] : []), "cost","who"];
 function options(key, map, hints={}){
-  return `<div class="options">${Object.entries(map).map(([k,v])=>`<button type="button" class="opt" data-k="${key}" data-v="${k}" aria-pressed="${d[key]===k}">${v}${hints[k]?`<small>${hints[k]}</small>`:""}</button>`).join("")}</div>`;
+  return `<div class="group">${Object.entries(map).map(([k,v])=>`<button type="button" class="opt" data-k="${key}" data-v="${k}" aria-pressed="${d[key]===k}"><span><b>${v}</b>${hints[k]?`<small>${hints[k]}</small>`:""}</span>${ICON.check}</button>`).join("")}</div>`;
 }
 function drawStep(err=""){
   const s = steps(), name = s[stepIdx];
   const q = {
-    what: `<h2>What's the date?</h2><label for="t">The idea</label><input id="t" maxlength="80" value="${esc(d.title)}" placeholder="Blind taste test night">
-           <label for="dt">Any details? (optional)</label><textarea id="dt" rows="3" maxlength="280">${esc(d.details)}</textarea>`,
-    where: `<h2>Where does it happen?</h2>${options("setting",SETTINGS,{home:"Stay in",indoor:"Restaurants, classes, cinemas",outdoor:"Parks, beaches, walks"})}`,
-    city: `<h2>Does it depend on the city?</h2>${options("loc",{any:"Works anywhere",one:"Only in one city"},{any:"Most places will have something like it",one:"It's a specific spot or experience"})}
-           <div id="cityFields" ${d.loc==="one"?"":"hidden"}><label for="c">Which city?</label><input id="c" maxlength="40" value="${esc(d.city)}" placeholder="Dubai">
-           <label for="p">Specific place (optional)</label><input id="p" maxlength="60" value="${esc(d.place)}"></div>`,
-    weather: `<h2>What weather does it need?</h2>${options("weather",WEATHER)}`,
-    cost: `<h2>How much does it cost?</h2>${options("cost",COSTS)}`,
-    who: `<h2>Who's adding it?</h2><label for="n">Your name</label><input id="n" maxlength="30" value="${esc(d.submitted_by)}" placeholder="So people know who to thank">`
+    what: `<h2 class="q">What's the idea?</h2><div class="group"><input id="t" maxlength="80" value="${esc(d.title)}" placeholder="Name it, e.g. Blind taste test night"><textarea id="dt" rows="3" maxlength="280" placeholder="Details (optional)">${esc(d.details)}</textarea></div>`,
+    where: `<h2 class="q">Where does it happen?</h2>${options("setting",SETTINGS,{home:"Stay in",indoor:"Restaurants, classes, cinemas",outdoor:"Parks, beaches, walks"})}`,
+    city: `<h2 class="q">Does it depend on the city?</h2>${options("loc",{any:"Works anywhere",one:"Only in one city"},{any:"Most places have something like it",one:"A specific spot or experience"})}
+      ${d.loc==="one"?`<div class="sub"><div class="group"><input id="c" maxlength="40" value="${esc(d.city)}" placeholder="City, e.g. Dubai"><input id="p" maxlength="60" value="${esc(d.place)}" placeholder="Specific place (optional)"></div></div>`:""}`,
+    weather: `<h2 class="q">What weather does it need?</h2>${options("weather",WEATHER)}`,
+    cost: `<h2 class="q">How much does it cost?</h2>${options("cost",COSTS)}`,
+    who: `<h2 class="q">Who's adding it?</h2><div class="group"><input id="n" maxlength="30" value="${esc(d.submitted_by)}" placeholder="Your name"></div><p class="hint">Shown on the card so everyone knows who to thank.</p>`
   }[name];
-  document.getElementById("wizBody").innerHTML = `<div class="step">Question ${stepIdx+1} of ${s.length}</div>${q}<div class="err">${esc(err)}</div>
-    <div class="row"><button class="btn" id="back">${stepIdx?"Back":"Cancel"}</button><button class="btn primary" id="next">${name==="who"?"Pin it":"Next"}</button></div>`;
-  const first = document.querySelector("#wizBody input, #wizBody .opt"); if (first) first.focus();
+  document.getElementById("wizBody").innerHTML = `<div class="grab"></div>
+    <div class="sheet-bar"><button class="circle" id="back" aria-label="${stepIdx?"Back":"Close"}">${stepIdx?ICON.back:ICON.x}</button><div class="t">New idea</div><span></span></div>
+    <div class="sheet-body"><p class="step">Question ${stepIdx+1} of ${s.length}</p>${q}</div>
+    <div class="err" role="alert">${esc(err)}</div>
+    <div class="sheet-acts"><button class="pill blue" id="next">${name==="who"?"Pin it":"Next"}</button></div>`;
 }
-document.getElementById("wizBody").addEventListener("click", async e => {
+function saveFields(){
+  const v = id => document.getElementById(id) ? document.getElementById(id).value.trim() : null;
+  if (v("t")!==null) d.title = v("t"); if (v("dt")!==null) d.details = v("dt");
+  if (v("c")!==null) d.city = v("c"); if (v("p")!==null) d.place = v("p");
+  if (v("n")!==null) d.submitted_by = v("n");
+}
+document.getElementById("wizBody").addEventListener("click", e => {
   const o = e.target.closest(".opt");
-  if (o){ d[o.dataset.k] = o.dataset.v; drawStep(); return; }
-  if (e.target.id==="back"){ stepIdx ? (stepIdx--, drawStep()) : wiz.close(); return; }
-  if (e.target.id !== "next") return;
-  const name = steps()[stepIdx], val = id => (document.getElementById(id)?.value || "").trim();
-  if (name==="what"){ d.title = val("t"); d.details = val("dt"); if (!d.title) return drawStep("Give the idea a short name."); }
-  if (name==="where" && !d.setting) return drawStep("Pick one option.");
-  if (name==="city"){ if (!d.loc) return drawStep("Pick one option."); if (d.loc==="one"){ d.city = val("c"); d.place = val("p"); if (!d.city) return drawStep("Add the city."); } }
-  if (name==="weather" && !d.weather) return drawStep("Pick one option.");
-  if (name==="cost" && !d.cost) return drawStep("Pick one option.");
-  if (name==="who"){ d.submitted_by = val("n"); if (!d.submitted_by) return drawStep("Add your name."); return save(); }
+  if (o){ saveFields(); d[o.dataset.k] = o.dataset.v; drawStep(); if (o.dataset.v==="one") document.getElementById("c").focus(); return; }
+  if (e.target.closest("#back")){ saveFields(); stepIdx ? (stepIdx--, drawStep()) : wiz.close(); return; }
+  if (!e.target.closest("#next")) return;
+  saveFields();
+  const name = steps()[stepIdx];
+  if (name==="what" && !d.title) return drawStep("Give the idea a short name.");
+  if (name==="where" && !d.setting) return drawStep("Choose an option.");
+  if (name==="city"){ if (!d.loc) return drawStep("Choose an option."); if (d.loc==="one" && !d.city) return drawStep("Add the city."); }
+  if (name==="weather" && !d.weather) return drawStep("Choose an option.");
+  if (name==="cost" && !d.cost) return drawStep("Choose an option.");
+  if (name==="who"){ if (!d.submitted_by) return drawStep("Add your name."); return save(); }
   stepIdx++; drawStep();
 });
 async function save(){
   store.set("dateboard-name", d.submitted_by);
+  const one = d.setting!=="home" && d.loc==="one";
   const row = { title:d.title, details:d.details||null, setting:d.setting,
-    city: d.setting!=="home" && d.loc==="one" ? titleCase(d.city) : null,
-    place: d.setting!=="home" && d.loc==="one" && d.place ? d.place : null,
+    city: one ? titleCase(d.city) : null, place: one && d.place ? d.place : null,
     cost:d.cost, weather: d.setting==="outdoor" ? d.weather : null, submitted_by:d.submitted_by };
-  document.getElementById("next").disabled = true;
-  if (DEMO){ ideas.unshift({...row, id:"x"+Date.now()}); }
+  const btn = document.getElementById("next"); btn.disabled = true; btn.textContent = "Pinning…";
+  if (DEMO) ideas.unshift({...row, id:"x"+Date.now()});
   else {
     const {data, error} = await db.from("date_ideas").insert(row).select().single();
-    if (error){ document.getElementById("next").disabled = false; return drawStep("Couldn't pin that. Check your connection and try again."); }
+    if (error){ console.error(error); return drawStep("Couldn't pin that. Check your connection and try again."); }
     ideas.unshift(data);
   }
   wiz.close(); render();
@@ -236,6 +321,7 @@ document.getElementById("addBtn").onclick = () => {
   d = {title:"",details:"",setting:null,loc:null,city:"",place:"",weather:null,cost:null,submitted_by:store.get("dateboard-name")||""};
   stepIdx = 0; drawStep(); wiz.showModal();
 };
+wiz.addEventListener("click", e => { if (e.target === wiz) wiz.close(); });
 load();
 </script>
 </body>
