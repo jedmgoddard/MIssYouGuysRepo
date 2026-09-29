@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Date Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--board:#E9EDEB;--grid:#D6DDDA;--ink:#1B2433;--soft:#5A6475;--marker:#D93A2B;
+--free:#C9EBB4;--low:#FFE57A;--mid:#A9D9F2;--high:#FFB8CB;--panel:#fff;
+--hand:"Kalam","Comic Sans MS",cursive;--sans:"Archivo",system-ui,-apple-system,sans-serif;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--board:#1E2622;--grid:#2A3430;--ink:#EEF1EC;--soft:#A7B2AB;--panel:#27302C}}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{background:var(--board);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;color:var(--ink);font-family:var(--sans);min-height:100vh}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--marker);outline-offset:2px}
+.wrap{max-width:1200px;margin:0 auto;padding:24px 20px 80px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px}
+h1{font-weight:900;font-stretch:125%;font-size:clamp(2.4rem,8vw,5rem);line-height:.9;letter-spacing:-.02em;margin:0}
+h1 small{display:block;font-family:var(--hand);font-weight:400;font-stretch:100%;font-size:1.1rem;letter-spacing:0;color:var(--soft);margin-top:10px}
+.actions{display:flex;gap:10px}
+.btn{border:2.5px solid var(--ink);background:var(--panel);padding:11px 18px;border-radius:999px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--ink);color:var(--board)}
+.btn.red{background:var(--marker);border-color:var(--marker);color:#fff}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:28px}
+.chip{border:2px solid var(--ink);background:transparent;padding:6px 13px;border-radius:999px;font-size:.9rem;font-weight:600;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--board)}
+select{border:2px solid var(--ink);background:var(--panel);padding:7px 12px;border-radius:999px;font-weight:600;font-size:.9rem}
+.sep{width:1px;height:24px;background:var(--soft);opacity:.5;margin:0 4px}
+.demo{font-family:var(--hand);background:var(--low);color:#1B2433;padding:8px 14px;display:inline-block;transform:rotate(-1deg);margin-bottom:18px}
+section h2{font-family:var(--hand);font-weight:700;font-size:2rem;margin:10px 0 14px;display:inline-block;border-bottom:4px solid var(--marker);line-height:1.1}
+.notes{columns:4 230px;column-gap:22px;margin-bottom:30px}
+.note{break-inside:avoid;margin:0 0 26px;padding:24px 18px 16px;color:#1B2433;position:relative;box-shadow:2px 6px 0 rgba(27,36,51,.18);cursor:pointer;border:0;text-align:left;width:100%;display:block}
+.note::before{content:"";position:absolute;top:-9px;left:50%;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:var(--marker);box-shadow:inset -3px -3px 0 rgba(0,0,0,.2)}
+.note h3{font-family:var(--hand);font-size:1.45rem;line-height:1.15;margin:0 0 6px;font-weight:700}
+.note p{font-family:var(--hand);margin:0 0 12px;line-height:1.35}
+.tags{display:flex;flex-wrap:wrap;gap:6px;font-size:.78rem;font-weight:600}
+.tags span{border:1.5px solid rgba(27,36,51,.5);padding:2px 8px;border-radius:999px}
+.by{font-family:var(--hand);font-size:.95rem;margin-top:10px;opacity:.75}
+.empty{font-family:var(--hand);font-size:1.3rem;padding:40px 0}
+dialog{border:0;padding:0;background:transparent;max-width:min(560px,92vw);width:100%}
+dialog::backdrop{background:rgba(20,26,24,.6)}
+.sheet{background:var(--panel);color:var(--ink);border-radius:18px;padding:26px;border:2.5px solid var(--ink)}
+.step{font-size:.85rem;color:var(--soft);font-weight:600}
+.sheet h2{font-weight:800;font-stretch:112%;font-size:1.7rem;margin:6px 0 18px;line-height:1.1}
+.sheet label{display:block;font-weight:600;margin:12px 0 6px}
+.sheet input,.sheet textarea{width:100%;padding:12px;border:2px solid var(--ink);border-radius:10px;background:var(--board)}
+.options{display:grid;gap:10px}
+.opt{border:2px solid var(--ink);background:transparent;padding:14px;border-radius:12px;text-align:left;cursor:pointer;font-weight:600}
+.opt small{display:block;font-weight:400;color:var(--soft)}
+.opt[aria-pressed="true"]{background:var(--ink);color:var(--board)}
+.opt[aria-pressed="true"] small{color:var(--board)}
+.row{display:flex;justify-content:space-between;gap:10px;margin-top:22px}
+.err{color:var(--marker);font-weight:600;margin-top:10px;min-height:1.2em}
+.big{transform:rotate(-2deg);font-size:1.15em;cursor:default;margin:10px 0 20px}
+.big h3{font-size:2rem}
+@media (prefers-reduced-motion:no-preference){.big{animation:drop .45s cubic-bezier(.2,1.4,.4,1)}@keyframes drop{from{transform:translateY(-40px) rotate(-10deg);opacity:0}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>The Date Board<small>Date ideas from friends, pinned and sorted</small></h1>
+  <div class="actions">
+    <button class="btn red" id="surpriseBtn">Surprise me</button>
+    <button class="btn primary" id="addBtn">Add an idea</button>
+  </div>
+</header>
+<div id="demo"></div>
+<div class="filters" id="filters"></div>
+<main id="board"></main>
+</div>
+<dialog id="wizard"><div class="sheet" id="wizBody"></div></dialog>
+<dialog id="shuffle"><div class="sheet" id="shufBody"></div></dialog>
+<script>
+// PASTE your Supabase details here
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
+
+const DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY;
+const db = DEMO ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SETTINGS = {home:"At home", indoor:"Out, indoors", outdoor:"Out, outdoors"};
+const COSTS = {free:"Free", low:"Cheap", mid:"Mid-range", high:"Splurge"};
+const WEATHER = {any:"Any weather", warm:"Warm and sunny", cool:"Cool and mild", wet:"Rain or snow"};
+let ideas = [];
+let f = {city:"all", setting:null, cost:null};
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const cityKey = s => (s||"").trim().toLowerCase();
+const titleCase = s => s.trim().replace(/\s+/g," ").replace(/\b\w/g, c => c.toUpperCase());
+const tilt = id => { let h=0; for (const c of String(id)) h=(h*31+c.charCodeAt(0))|0; return ((Math.abs(h)%50)/10-2.5).toFixed(1); };
+const store = { get(k){ try{return localStorage.getItem(k)}catch{return null} }, set(k,v){ try{localStorage.setItem(k,v)}catch{} } };
+
+async function load(){
+  if (DEMO){
+    document.getElementById("demo").innerHTML = '<div class="demo">Demo mode: ideas disappear on refresh until you add your Supabase details.</div>';
+    ideas = [
+      {id:"a",title:"Blind taste test night",details:"Buy five cheap chocolates, rate them blind, loser plans the next date.",setting:"home",city:null,cost:"low",weather:null,submitted_by:"Qs"},
+      {id:"b",title:"Sunrise at the desert",details:"Drive out early, bring karak and a blanket.",setting:"outdoor",city:"Dubai",cost:"free",weather:"cool",submitted_by:"Qs"},
+      {id:"c",title:"Pottery class",details:"",setting:"indoor",city:null,cost:"mid",weather:null,submitted_by:"Sam"},
+      {id:"d",title:"Picnic on Primrose Hill",details:"Golden hour, then dinner in Camden.",setting:"outdoor",city:"London",cost:"low",weather:"warm",submitted_by:"Jay"}];
+    return render();
+  }
+  const {data, error} = await db.from("date_ideas").select("*").order("created_at",{ascending:false});
+  if (error){ document.getElementById("board").innerHTML = '<p class="empty">Couldn\'t load ideas. Check your Supabase URL and key, then refresh.</p>'; return; }
+  ideas = data; render();
+}
+
+function filtered(){
+  return ideas.filter(i => {
+    if (f.city === "anywhere" && i.city) return false;
+    if (f.city !== "all" && f.city !== "anywhere" && i.city && cityKey(i.city) !== f.city) return false;
+    if (f.setting && i.setting !== f.setting) return false;
+    if (f.cost && i.cost !== f.cost) return false;
+    return true;
+  });
+}
+
+function noteHTML(i, big=false){
+  const tags = [i.city ? "📍 "+esc(i.city)+(i.place?", "+esc(i.place):"") : "Works anywhere", COSTS[i.cost], i.weather && i.weather!=="any" ? WEATHER[i.weather] : null].filter(Boolean);
+  return `<${big?"div":"button"} class="note${big?" big":""}" data-id="${esc(i.id)}" style="background:var(--${i.cost});transform:rotate(${big?-2:tilt(i.id)}deg)">
+    <h3>${esc(i.title)}</h3>${i.details?`<p>${esc(i.details)}</p>`:""}
+    <div class="tags">${tags.map(t=>`<span>${t}</span>`).join("")}</div>
+    <div class="by">from ${esc(i.submitted_by)}</div></${big?"div":"button"}>`;
+}
+
+function renderFilters(){
+  const cities = [...new Map(ideas.filter(i=>i.city).map(i=>[cityKey(i.city), titleCase(i.city)])).entries()].sort();
+  const chips = (group, map) => Object.entries(map).map(([k,v]) => `<button class="chip" data-g="${group}" data-v="${k}" aria-pressed="${f[group]===k}">${v}</button>`).join("");
+  document.getElementById("filters").innerHTML = `
+    <select id="citySel" aria-label="City">
+      <option value="all">All cities</option><option value="anywhere">Works anywhere</option>
+      ${cities.map(([k,v])=>`<option value="${esc(k)}">${esc(v)} + anywhere</option>`).join("")}
+    </select><span class="sep"></span>${chips("setting",SETTINGS)}<span class="sep"></span>${chips("cost",COSTS)}`;
+  document.getElementById("citySel").value = f.city;
+}
+
+function render(){
+  renderFilters();
+  const list = filtered();
+  const board = document.getElementById("board");
+  if (!ideas.length){ board.innerHTML = '<p class="empty">The board is empty. Pin the first date idea.</p>'; return; }
+  if (!list.length){ board.innerHTML = '<p class="empty">Nothing matches those filters. Try removing one.</p>'; return; }
+  board.innerHTML = Object.entries(SETTINGS).map(([k,label]) => {
+    const group = list.filter(i=>i.setting===k);
+    return group.length ? `<section><h2>${label}</h2><div class="notes">${group.map(i=>noteHTML(i)).join("")}</div></section>` : "";
+  }).join("");
+}
+
+document.getElementById("filters").addEventListener("click", e => {
+  const c = e.target.closest(".chip"); if (!c) return;
+  f[c.dataset.g] = f[c.dataset.g] === c.dataset.v ? null : c.dataset.v; render();
+});
+document.getElementById("filters").addEventListener("change", e => { if (e.target.id==="citySel"){ f.city = e.target.value; render(); } });
+document.getElementById("board").addEventListener("click", e => {
+  const n = e.target.closest(".note"); if (n) showOne(ideas.find(i=>String(i.id)===n.dataset.id), false);
+});
+
+// Surprise me
+const shuf = document.getElementById("shuffle");
+function showOne(idea, random=true){
+  const body = document.getElementById("shufBody");
+  if (!idea){ body.innerHTML = `<h2>No ideas match</h2><p>Loosen the filters or add a new idea.</p><div class="row"><span></span><button class="btn" id="closeS">Close</button></div>`; }
+  else body.innerHTML = `${noteHTML(idea,true)}<div class="row"><button class="btn" id="closeS">Close</button>${random?'<button class="btn red" id="again">Another one</button>':""}</div>`;
+  if (!shuf.open) shuf.showModal();
+  document.getElementById("closeS").onclick = () => shuf.close();
+  const a = document.getElementById("again"); if (a) a.onclick = surprise;
+}
+let last = null;
+function surprise(){
+  const list = filtered(); if (!list.length) return showOne(null);
+  let pick; do { pick = list[Math.floor(Math.random()*list.length)]; } while (list.length>1 && pick===last);
+  last = pick; showOne(pick);
+}
+document.getElementById("surpriseBtn").onclick = surprise;
+
+// Add-an-idea questions
+const wiz = document.getElementById("wizard");
+let d, stepIdx;
+const steps = () => ["what","where", ...(d.setting && d.setting!=="home" ? ["city"] : []), ...(d.setting==="outdoor" ? ["weather"] : []), "cost","who"];
+function options(key, map, hints={}){
+  return `<div class="options">${Object.entries(map).map(([k,v])=>`<button type="button" class="opt" data-k="${key}" data-v="${k}" aria-pressed="${d[key]===k}">${v}${hints[k]?`<small>${hints[k]}</small>`:""}</button>`).join("")}</div>`;
+}
+function drawStep(err=""){
+  const s = steps(), name = s[stepIdx];
+  const q = {
+    what: `<h2>What's the date?</h2><label for="t">The idea</label><input id="t" maxlength="80" value="${esc(d.title)}" placeholder="Blind taste test night">
+           <label for="dt">Any details? (optional)</label><textarea id="dt" rows="3" maxlength="280">${esc(d.details)}</textarea>`,
+    where: `<h2>Where does it happen?</h2>${options("setting",SETTINGS,{home:"Stay in",indoor:"Restaurants, classes, cinemas",outdoor:"Parks, beaches, walks"})}`,
+    city: `<h2>Does it depend on the city?</h2>${options("loc",{any:"Works anywhere",one:"Only in one city"},{any:"Most places will have something like it",one:"It's a specific spot or experience"})}
+           <div id="cityFields" ${d.loc==="one"?"":"hidden"}><label for="c">Which city?</label><input id="c" maxlength="40" value="${esc(d.city)}" placeholder="Dubai">
+           <label for="p">Specific place (optional)</label><input id="p" maxlength="60" value="${esc(d.place)}"></div>`,
+    weather: `<h2>What weather does it need?</h2>${options("weather",WEATHER)}`,
+    cost: `<h2>How much does it cost?</h2>${options("cost",COSTS)}`,
+    who: `<h2>Who's adding it?</h2><label for="n">Your name</label><input id="n" maxlength="30" value="${esc(d.submitted_by)}" placeholder="So people know who to thank">`
+  }[name];
+  document.getElementById("wizBody").innerHTML = `<div class="step">Question ${stepIdx+1} of ${s.length}</div>${q}<div class="err">${esc(err)}</div>
+    <div class="row"><button class="btn" id="back">${stepIdx?"Back":"Cancel"}</button><button class="btn primary" id="next">${name==="who"?"Pin it":"Next"}</button></div>`;
+  const first = document.querySelector("#wizBody input, #wizBody .opt"); if (first) first.focus();
+}
+document.getElementById("wizBody").addEventListener("click", async e => {
+  const o = e.target.closest(".opt");
+  if (o){ d[o.dataset.k] = o.dataset.v; drawStep(); return; }
+  if (e.target.id==="back"){ stepIdx ? (stepIdx--, drawStep()) : wiz.close(); return; }
+  if (e.target.id !== "next") return;
+  const name = steps()[stepIdx], val = id => (document.getElementById(id)?.value || "").trim();
+  if (name==="what"){ d.title = val("t"); d.details = val("dt"); if (!d.title) return drawStep("Give the idea a short name."); }
+  if (name==="where" && !d.setting) return drawStep("Pick one option.");
+  if (name==="city"){ if (!d.loc) return drawStep("Pick one option."); if (d.loc==="one"){ d.city = val("c"); d.place = val("p"); if (!d.city) return drawStep("Add the city."); } }
+  if (name==="weather" && !d.weather) return drawStep("Pick one option.");
+  if (name==="cost" && !d.cost) return drawStep("Pick one option.");
+  if (name==="who"){ d.submitted_by = val("n"); if (!d.submitted_by) return drawStep("Add your name."); return save(); }
+  stepIdx++; drawStep();
+});
+async function save(){
+  store.set("dateboard-name", d.submitted_by);
+  const row = { title:d.title, details:d.details||null, setting:d.setting,
+    city: d.setting!=="home" && d.loc==="one" ? titleCase(d.city) : null,
+    place: d.setting!=="home" && d.loc==="one" && d.place ? d.place : null,
+    cost:d.cost, weather: d.setting==="outdoor" ? d.weather : null, submitted_by:d.submitted_by };
+  document.getElementById("next").disabled = true;
+  if (DEMO){ ideas.unshift({...row, id:"x"+Date.now()}); }
+  else {
+    const {data, error} = await db.from("date_ideas").insert(row).select().single();
+    if (error){ document.getElementById("next").disabled = false; return drawStep("Couldn't pin that. Check your connection and try again."); }
+    ideas.unshift(data);
+  }
+  wiz.close(); render();
+}
+document.getElementById("addBtn").onclick = () => {
+  d = {title:"",details:"",setting:null,loc:null,city:"",place:"",weather:null,cost:null,submitted_by:store.get("dateboard-name")||""};
+  stepIdx = 0; drawStep(); wiz.showModal();
+};
+load();
+</script>
+</body>
+</html>
