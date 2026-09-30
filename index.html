@@ -38,6 +38,11 @@ h1{font-size:34px;line-height:41px;font-weight:700;letter-spacing:.4px;margin:0}
 .sheet-bar .circle{background:var(--fill);color:var(--label);box-shadow:none}
 .pill{height:48px;border-radius:100px;border:0;padding:0 22px;font-size:17px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .pill.blue{background:var(--rose);color:var(--lemon)}
+.pill.del{background:var(--rose);color:var(--lemon)}
+.lnk{display:inline-flex;align-items:center;gap:4px;margin-top:10px;font-size:14px;font-weight:600;color:var(--fg);text-decoration:underline;text-underline-offset:3px;word-break:break-all}
+.admin{display:flex;gap:8px;margin-top:12px}
+.mini{border:0;border-radius:100px;padding:6px 12px;font-size:13px;font-weight:600;background:var(--tag);color:var(--fg);cursor:pointer}
+.manage{border:0;background:none;color:inherit;font-size:13px;text-decoration:underline;text-underline-offset:2px;cursor:pointer;padding:6px;margin-top:4px}
 .pill.rand{height:44px;background:var(--coffee);color:var(--lemon);box-shadow:0 4px 14px rgba(45,18,13,.3)}
 .pill.grey{background:var(--fill);color:var(--label)}
 .pill:active,.circle:active{transform:scale(.97)}
@@ -135,7 +140,7 @@ dialog.sheet[open]{animation:up .35s cubic-bezier(.2,.9,.3,1)}
   <div class="filters" id="filters"></div>
 </div></header>
 <main id="board"></main>
-<footer class="foot">© Website created and monitored by @sidequestqs @m.j.godd</footer>
+<footer class="foot">© Website created and monitored by @sidequestqs @m.j.godd<br><button class="manage" id="manageBtn">Manage</button></footer>
 
 <dialog class="alertd" id="welcome"><div class="alert welcome">
   <div class="tm"><h2>Welcome to Miss You Guys</h2>
@@ -145,6 +150,7 @@ dialog.sheet[open]{animation:up .35s cubic-bezier(.2,.9,.3,1)}
 </div></dialog>
 <dialog class="alertd" id="shuffle"><div class="alert" id="shufBody"></div></dialog>
 <dialog class="sheet" id="wizard"><div class="sheet-in" id="wizBody"></div></dialog>
+<dialog class="sheet" id="login"><div class="sheet-in" id="loginBody"></div></dialog>
 
 <script>
 const SUPABASE_URL = "https://bfkfunthrsxxsvkljgdi.supabase.co";
@@ -154,7 +160,6 @@ const DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY;
 const db = DEMO ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const SETTINGS = {home:"At home", indoor:"Out, indoors", outdoor:"Out, outdoors"};
 const COSTS = {free:"Free", low:"Cheap", mid:"Mid-range", high:"Splurge"};
-const TINT = {free:"var(--green)", low:"var(--yellow)", mid:"var(--teal)", high:"var(--pink)"};
 const WEATHER = {any:"Any weather", warm:"Warm and sunny", cool:"Cool and mild", wet:"Rain or snow"};
 const ICON = {
   x:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
@@ -163,11 +168,19 @@ const ICON = {
 };
 let ideas = [];
 let f = {city:"all", setting:null, cost:null};
+let admin = false;
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const cityKey = s => (s||"").trim().toLowerCase();
 const titleCase = s => s.trim().replace(/\s+/g," ").replace(/\b\w/g, c => c.toUpperCase());
 const store = { get(k){ try{return localStorage.getItem(k)}catch{return null} }, set(k,v){ try{localStorage.setItem(k,v)}catch{} } };
+// Returns a clean https link, null if blank, or false if it isn't a real web link
+function cleanLink(s){
+  s = (s||"").trim(); if (!s) return null;
+  if (!/^https?:\/\//i.test(s)) s = "https://" + s;
+  try { const u = new URL(s); return (["http:","https:"].includes(u.protocol) && u.hostname.includes(".")) ? u.href : false; } catch { return false; }
+}
+const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./,""); } catch { return "Link"; } };
 
 // Welcome message: shows once per device, closable
 const welcome = document.getElementById("welcome");
@@ -175,15 +188,45 @@ if (!store.get("myg-welcomed")) welcome.showModal();
 document.getElementById("welcomeClose").onclick = () => { store.set("myg-welcomed","1"); welcome.close(); };
 welcome.addEventListener("cancel", () => store.set("myg-welcomed","1"));
 
-// Nav hairline on scroll
 addEventListener("scroll", () => document.getElementById("nav").classList.toggle("scrolled", scrollY > 4), {passive:true});
+
+// Manager sign-in (Supabase Auth; permissions are enforced by the database)
+function setAdmin(on){ admin = on; document.getElementById("manageBtn").textContent = on ? "Manager mode on · Sign out" : "Manage"; render(); }
+if (!DEMO){
+  db.auth.getSession().then(({data}) => setAdmin(!!data.session));
+  db.auth.onAuthStateChange((_e, session) => setAdmin(!!session));
+}
+const loginD = document.getElementById("login");
+document.getElementById("manageBtn").onclick = async () => {
+  if (DEMO) return setAdmin(!admin);
+  if (admin) return db.auth.signOut();
+  drawLogin(); loginD.showModal();
+};
+function drawLogin(err=""){
+  document.getElementById("loginBody").innerHTML = `<div class="grab"></div>
+    <div class="sheet-bar"><button class="circle" id="loginClose" aria-label="Close">${ICON.x}</button><div class="t">Manager</div><span></span></div>
+    <div class="sheet-body"><h2 class="q">Sign in to manage pins</h2>
+    <div class="group"><input id="le" type="email" autocomplete="username" autocapitalize="off" placeholder="Email"><input id="lp" type="password" autocomplete="current-password" placeholder="Password"></div></div>
+    <div class="err" role="alert">${esc(err)}</div>
+    <div class="sheet-acts"><button class="pill blue" id="loginGo">Sign in</button></div>`;
+}
+document.getElementById("loginBody").addEventListener("click", async e => {
+  if (e.target.closest("#loginClose")) return loginD.close();
+  if (!e.target.closest("#loginGo")) return;
+  const email = document.getElementById("le").value.trim(), password = document.getElementById("lp").value;
+  const btn = document.getElementById("loginGo"); btn.disabled = true; btn.textContent = "Signing in…";
+  const {error} = await db.auth.signInWithPassword({email, password});
+  if (error) return drawLogin("Wrong email or password.");
+  loginD.close();
+});
+loginD.addEventListener("click", e => { if (e.target === loginD) loginD.close(); });
 
 async function load(){
   if (DEMO){
     document.getElementById("demo").innerHTML = '<div class="demo">Demo mode: ideas aren\'t saved until Supabase details are added.</div>';
     ideas = [
-      {id:"a",title:"Blind taste test night",details:"Buy five cheap chocolates, rate them blind, loser plans the next date.",setting:"home",city:null,cost:"low",weather:null,submitted_by:"Marcus"},
-      {id:"b",title:"Sunrise in the desert",details:"Drive out early, bring karak and a blanket.",setting:"outdoor",city:"Dubai",cost:"free",weather:"cool",submitted_by:"Marcus"}];
+      {id:"a",title:"Blind taste test night",details:"Buy five cheap chocolates, rate them blind, loser plans the next date.",setting:"home",city:null,cost:"low",weather:null,link:null,submitted_by:"Marcus"},
+      {id:"b",title:"Sunrise in the desert",details:"Drive out early, bring karak and a blanket.",setting:"outdoor",city:"Dubai",cost:"free",weather:"cool",link:"https://maps.google.com",submitted_by:"Marcus"}];
     return render();
   }
   const {data, error} = await db.from("date_ideas").select("*").order("created_at",{ascending:false});
@@ -203,10 +246,11 @@ function filtered(){
 
 function cardHTML(i, inAlert=false, n=0){
   const tags = [i.city ? "📍 "+esc(i.city)+(i.place?", "+esc(i.place):"") : "Works anywhere", COSTS[i.cost], i.weather && i.weather!=="any" ? WEATHER[i.weather] : null].filter(Boolean);
-  const tag = inAlert ? "div" : "button";
-  return `<${tag} class="card c${n%4}" data-id="${esc(i.id)}"><h3>${esc(i.title)}</h3>${i.details?`<p>${esc(i.details)}</p>`:""}
-    <div class="tags">${tags.map(t=>`<span>${t}</span>`).join("")}</div>
-    <div class="by">Added by ${esc(i.submitted_by)}</div></${tag}>`;
+  const link = i.link && /^https?:\/\//i.test(i.link) ? `<a class="lnk" href="${esc(i.link)}" target="_blank" rel="noopener noreferrer">🔗 ${esc(hostOf(i.link))} ↗</a>` : "";
+  const tools = admin && !inAlert ? `<div class="admin"><button class="mini" data-act="edit">Edit</button><button class="mini" data-act="delete">Delete</button></div>` : "";
+  return `<article class="card c${n%4}" data-id="${esc(i.id)}" ${inAlert?"":'tabindex="0" role="button"'}><h3>${esc(i.title)}</h3>${i.details?`<p>${esc(i.details)}</p>`:""}
+    <div class="tags">${tags.map(t=>`<span>${t}</span>`).join("")}</div>${link}
+    <div class="by">Added by ${esc(i.submitted_by)}</div>${tools}</article>`;
 }
 
 function seg(group, map, allLabel){
@@ -242,20 +286,25 @@ document.getElementById("filters").addEventListener("click", e => {
   f[b.dataset.g] = b.dataset.v || null; render();
 });
 document.getElementById("filters").addEventListener("change", e => { if (e.target.id==="citySel"){ f.city = e.target.value; render(); } });
+const byId = id => ideas.find(i=>String(i.id)===id);
 document.getElementById("board").addEventListener("click", e => {
-  const c = e.target.closest(".card"); if (c) showOne(ideas.find(i=>String(i.id)===c.dataset.id), false);
+  if (e.target.closest("a")) return;
+  const c = e.target.closest(".card"); if (!c) return;
+  const act = e.target.closest("[data-act]");
+  if (act) return act.dataset.act === "edit" ? openWizard(byId(c.dataset.id)) : confirmDelete(byId(c.dataset.id));
+  showOne(byId(c.dataset.id), false);
+});
+document.getElementById("board").addEventListener("keydown", e => {
+  if ((e.key==="Enter"||e.key===" ") && e.target.classList.contains("card")){ e.preventDefault(); showOne(byId(e.target.dataset.id), false); }
 });
 
-// Surprise me
+// Randomiser + alerts
 const shuf = document.getElementById("shuffle");
 let last = null;
+function openAlert(html){ document.getElementById("shufBody").innerHTML = html; if (!shuf.open) shuf.showModal(); const c = document.getElementById("closeS"); if (c) c.onclick = () => shuf.close(); }
 function showOne(idea, random=true){
-  const body = document.getElementById("shufBody");
-  body.innerHTML = !idea
-    ? `<div class="tm"><h2>No ideas match</h2><p class="msg">Remove a filter or add a new idea.</p></div><div class="acts"><button class="pill grey" id="closeS">OK</button></div>`
-    : `${cardHTML(idea,true,Math.max(0,ideas.indexOf(idea)))}<div class="acts ${random?"row":""}"><button class="pill grey" id="closeS">Done</button>${random?'<button class="pill blue" id="again">Another</button>':""}</div>`;
-  if (!shuf.open) shuf.showModal();
-  document.getElementById("closeS").onclick = () => shuf.close();
+  if (!idea) return openAlert(`<div class="tm"><h2>No ideas match</h2><p class="msg">Remove a filter or add a new idea.</p></div><div class="acts"><button class="pill grey" id="closeS">OK</button></div>`);
+  openAlert(`${cardHTML(idea,true,Math.max(0,ideas.indexOf(idea)))}<div class="acts ${random?"row":""}"><button class="pill grey" id="closeS">Done</button>${random?'<button class="pill blue" id="again">Another</button>':""}</div>`);
   const a = document.getElementById("again"); if (a) a.onclick = surprise;
 }
 function surprise(){
@@ -266,10 +315,22 @@ function surprise(){
 document.getElementById("surpriseBtn").onclick = surprise;
 shuf.addEventListener("click", e => { if (e.target === shuf) shuf.close(); });
 
-// Add-an-idea sheet
+function confirmDelete(idea, err=""){
+  openAlert(`<div class="tm"><h2>Delete this idea?</h2><p class="msg">“${esc(idea.title)}” will be removed for everyone. This can't be undone.</p>${err?`<p class="msg" style="color:var(--rose);font-weight:600;margin-top:10px">${esc(err)}</p>`:""}</div>
+    <div class="acts"><button class="pill del" id="doDel">Delete</button><button class="pill grey" id="closeS">Cancel</button></div>`);
+  document.getElementById("doDel").onclick = async () => {
+    if (!DEMO){
+      const {data, error} = await db.from("date_ideas").delete().eq("id", idea.id).select();
+      if (error || !data.length){ console.error(error); return confirmDelete(idea, "Couldn't delete. Make sure you're signed in as the manager."); }
+    }
+    ideas = ideas.filter(i => i !== idea); shuf.close(); render();
+  };
+}
+
+// Add / edit sheet
 const wiz = document.getElementById("wizard");
 let d, stepIdx;
-const steps = () => ["what","where", ...(d.setting && d.setting!=="home" ? ["city"] : []), ...(d.setting==="outdoor" ? ["weather"] : []), "cost","who"];
+const steps = () => ["what","where", ...(d.setting && d.setting!=="home" ? ["city"] : []), ...(d.setting==="outdoor" ? ["weather"] : []), "cost","link","who"];
 function options(key, map, hints={}){
   return `<div class="group">${Object.entries(map).map(([k,v])=>`<button type="button" class="opt" data-k="${key}" data-v="${k}" aria-pressed="${d[key]===k}"><span><b>${v}</b>${hints[k]?`<small>${hints[k]}</small>`:""}</span>${ICON.check}</button>`).join("")}</div>`;
 }
@@ -282,19 +343,20 @@ function drawStep(err=""){
       ${d.loc==="one"?`<div class="sub"><div class="group"><input id="c" maxlength="40" value="${esc(d.city)}" placeholder="City, e.g. Dubai"><input id="p" maxlength="60" value="${esc(d.place)}" placeholder="Specific place (optional)"></div></div>`:""}`,
     weather: `<h2 class="q">What weather does it need?</h2>${options("weather",WEATHER)}`,
     cost: `<h2 class="q">How much does it cost?</h2>${options("cost",COSTS)}`,
+    link: `<h2 class="q">Have a link?</h2><div class="group"><input id="l" type="url" inputmode="url" autocapitalize="off" autocorrect="off" maxlength="500" value="${esc(d.link)}" placeholder="Paste a link (optional)"></div><p class="hint">A booking page, map pin, recipe, video or anything that helps. Leave it blank if you don't have one.</p>`,
     who: `<h2 class="q">Who's adding it?</h2><div class="group"><input id="n" maxlength="30" value="${esc(d.submitted_by)}" placeholder="Your name"></div><p class="hint">Shown on the card so everyone knows who to thank.</p>`
   }[name];
   document.getElementById("wizBody").innerHTML = `<div class="grab"></div>
-    <div class="sheet-bar"><button class="circle" id="back" aria-label="${stepIdx?"Back":"Close"}">${stepIdx?ICON.back:ICON.x}</button><div class="t">New idea</div><span></span></div>
+    <div class="sheet-bar"><button class="circle" id="back" aria-label="${stepIdx?"Back":"Close"}">${stepIdx?ICON.back:ICON.x}</button><div class="t">${d.id?"Edit idea":"New idea"}</div><span></span></div>
     <div class="sheet-body"><p class="step">Question ${stepIdx+1} of ${s.length}</p>${q}</div>
     <div class="err" role="alert">${esc(err)}</div>
-    <div class="sheet-acts"><button class="pill blue" id="next">${name==="who"?"Pin it":"Next"}</button></div>`;
+    <div class="sheet-acts"><button class="pill blue" id="next">${name==="who" ? (d.id?"Save changes":"Pin it") : "Next"}</button></div>`;
 }
 function saveFields(){
   const v = id => document.getElementById(id) ? document.getElementById(id).value.trim() : null;
   if (v("t")!==null) d.title = v("t"); if (v("dt")!==null) d.details = v("dt");
   if (v("c")!==null) d.city = v("c"); if (v("p")!==null) d.place = v("p");
-  if (v("n")!==null) d.submitted_by = v("n");
+  if (v("l")!==null) d.link = v("l"); if (v("n")!==null) d.submitted_by = v("n");
 }
 document.getElementById("wizBody").addEventListener("click", e => {
   const o = e.target.closest(".opt");
@@ -308,28 +370,37 @@ document.getElementById("wizBody").addEventListener("click", e => {
   if (name==="city"){ if (!d.loc) return drawStep("Choose an option."); if (d.loc==="one" && !d.city) return drawStep("Add the city."); }
   if (name==="weather" && !d.weather) return drawStep("Choose an option.");
   if (name==="cost" && !d.cost) return drawStep("Choose an option.");
+  if (name==="link" && cleanLink(d.link)===false) return drawStep("That link doesn't look right. Check it or leave it blank.");
   if (name==="who"){ if (!d.submitted_by) return drawStep("Add your name."); return save(); }
   stepIdx++; drawStep();
 });
 async function save(){
-  store.set("dateboard-name", d.submitted_by);
+  if (!d.id) store.set("dateboard-name", d.submitted_by);
   const one = d.setting!=="home" && d.loc==="one";
   const row = { title:d.title, details:d.details||null, setting:d.setting,
     city: one ? titleCase(d.city) : null, place: one && d.place ? d.place : null,
-    cost:d.cost, weather: d.setting==="outdoor" ? d.weather : null, submitted_by:d.submitted_by };
-  const btn = document.getElementById("next"); btn.disabled = true; btn.textContent = "Pinning…";
-  if (DEMO) ideas.unshift({...row, id:"x"+Date.now()});
-  else {
-    const {data, error} = await db.from("date_ideas").insert(row).select().single();
-    if (error){ console.error(error); return drawStep("Couldn't pin that. Check your connection and try again."); }
-    ideas.unshift(data);
+    cost:d.cost, weather: d.setting==="outdoor" ? d.weather : null,
+    link: cleanLink(d.link) || null, submitted_by:d.submitted_by };
+  const btn = document.getElementById("next"); btn.disabled = true; btn.textContent = d.id ? "Saving…" : "Pinning…";
+  let saved = {...row, id: d.id || "x"+Date.now()};
+  if (!DEMO){
+    const q = d.id ? db.from("date_ideas").update(row).eq("id", d.id) : db.from("date_ideas").insert(row);
+    const {data, error} = await q.select().single();
+    if (error){ console.error(error); return drawStep(d.id ? "Couldn't save. Make sure you're signed in as the manager." : "Couldn't pin that. Check your connection and try again."); }
+    saved = data;
   }
+  if (d.id){ const k = ideas.findIndex(i=>i.id===d.id); if (k>-1) ideas[k] = {...ideas[k], ...saved}; }
+  else ideas.unshift(saved);
   wiz.close(); render();
 }
-document.getElementById("addBtn").onclick = () => {
-  d = {title:"",details:"",setting:null,loc:null,city:"",place:"",weather:null,cost:null,submitted_by:store.get("dateboard-name")||""};
+function openWizard(idea=null){
+  d = idea
+    ? {id:idea.id, title:idea.title, details:idea.details||"", setting:idea.setting, loc: idea.setting==="home" ? null : (idea.city ? "one" : "any"),
+       city:idea.city||"", place:idea.place||"", weather:idea.weather, cost:idea.cost, link:idea.link||"", submitted_by:idea.submitted_by}
+    : {title:"",details:"",setting:null,loc:null,city:"",place:"",weather:null,cost:null,link:"",submitted_by:store.get("dateboard-name")||""};
   stepIdx = 0; drawStep(); wiz.showModal();
-};
+}
+document.getElementById("addBtn").onclick = () => openWizard();
 wiz.addEventListener("click", e => { if (e.target === wiz) wiz.close(); });
 load();
 </script>
