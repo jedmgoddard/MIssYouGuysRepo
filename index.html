@@ -39,6 +39,15 @@ h1{font-size:34px;line-height:41px;font-weight:700;letter-spacing:.4px;margin:0}
 .pill{height:48px;border-radius:100px;border:0;padding:0 22px;font-size:17px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .pill.blue{background:var(--rose);color:var(--lemon)}
 .pill.del{background:var(--rose);color:var(--lemon)}
+.pill.reason{background:var(--fill);color:var(--rose)}
+.more{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:50%;border:0;background:var(--tag);color:var(--fg);display:grid;place-items:center;cursor:pointer;padding:0}
+.more svg{width:16px;height:16px}
+.card h3{padding-right:34px}
+.flag{margin-top:10px;font-size:13px;font-weight:600;padding:6px 10px;border-radius:12px;background:var(--tag)}
+.hiddenBadge{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:100px;background:var(--fg);color:var(--bg);margin-bottom:8px}
+.card.isHidden{opacity:.72}
+.toggle{border:0;border-radius:100px;height:32px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer;background:var(--fill2)}
+.toggle[aria-pressed="true"]{background:var(--rose);color:var(--lemon)}
 .lnk{display:inline-flex;align-items:center;gap:4px;margin-top:10px;font-size:14px;font-weight:600;color:var(--fg);text-decoration:underline;text-underline-offset:3px;word-break:break-all}
 .admin{display:flex;gap:8px;margin-top:12px}
 .mini{border:0;border-radius:100px;padding:6px 12px;font-size:13px;font-weight:600;background:var(--tag);color:var(--fg);cursor:pointer}
@@ -167,8 +176,11 @@ const ICON = {
   back:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>'
 };
 let ideas = [];
-let f = {city:"all", setting:null, cost:null};
+let f = {city:"all", setting:null, cost:null, reported:false};
 let admin = false;
+let reports = {}; // manager only: idea_id -> {count, reasons}
+const REASONS = {spam:"Spam", inappropriate:"Inappropriate", duplicate:"Duplicate", other:"Something else"};
+const reportedHere = () => { try { return JSON.parse(store.get("myg-reported")||"[]"); } catch { return []; } };
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const cityKey = s => (s||"").trim().toLowerCase();
@@ -191,10 +203,9 @@ welcome.addEventListener("cancel", () => store.set("myg-welcomed","1"));
 addEventListener("scroll", () => document.getElementById("nav").classList.toggle("scrolled", scrollY > 4), {passive:true});
 
 // Manager sign-in (Supabase Auth; permissions are enforced by the database)
-function setAdmin(on){ admin = on; document.getElementById("manageBtn").textContent = on ? "Manager mode on · Sign out" : "Manage"; render(); }
+function setAdmin(on){ admin = on; if (!on) f.reported = false; document.getElementById("manageBtn").textContent = on ? "Manager mode on · Sign out" : "Manage"; load(); }
 if (!DEMO){
-  db.auth.getSession().then(({data}) => setAdmin(!!data.session));
-  db.auth.onAuthStateChange((_e, session) => setAdmin(!!session));
+  db.auth.onAuthStateChange((event, session) => { if (event==="INITIAL_SESSION" || event==="SIGNED_IN" || event==="SIGNED_OUT") setAdmin(!!session); });
 }
 const loginD = document.getElementById("login");
 document.getElementById("manageBtn").onclick = async () => {
@@ -231,11 +242,19 @@ async function load(){
   }
   const {data, error} = await db.from("date_ideas").select("*").order("created_at",{ascending:false});
   if (error){ console.error(error); document.getElementById("board").innerHTML = '<div class="empty"><strong>Couldn\'t load ideas</strong>Check your connection, then refresh.</div>'; return; }
-  ideas = data; render();
+  ideas = data;
+  reports = {};
+  if (admin){
+    const r = await db.from("reports").select("idea_id,reason");
+    if (!r.error) for (const x of r.data){ const o = reports[x.idea_id] ||= {count:0, reasons:[]}; o.count++; if (x.reason && !o.reasons.includes(x.reason)) o.reasons.push(x.reason); }
+  }
+  render();
 }
 
 function filtered(){
   return ideas.filter(i => {
+    if (i.hidden && !admin) return false;
+    if (f.reported && !reports[i.id] && !i.hidden) return false;
     if (f.city === "anywhere" && i.city) return false;
     if (f.city !== "all" && f.city !== "anywhere" && i.city && cityKey(i.city) !== f.city) return false;
     if (f.setting && i.setting !== f.setting) return false;
@@ -247,10 +266,13 @@ function filtered(){
 function cardHTML(i, inAlert=false, n=0){
   const tags = [i.city ? "📍 "+esc(i.city)+(i.place?", "+esc(i.place):"") : "Works anywhere", COSTS[i.cost], i.weather && i.weather!=="any" ? WEATHER[i.weather] : null].filter(Boolean);
   const link = i.link && /^https?:\/\//i.test(i.link) ? `<a class="lnk" href="${esc(i.link)}" target="_blank" rel="noopener noreferrer">🔗 ${esc(hostOf(i.link))} ↗</a>` : "";
-  const tools = admin && !inAlert ? `<div class="admin"><button class="mini" data-act="edit">Edit</button><button class="mini" data-act="delete">Delete</button></div>` : "";
-  return `<article class="card c${n%4}" data-id="${esc(i.id)}" ${inAlert?"":'tabindex="0" role="button"'}><h3>${esc(i.title)}</h3>${i.details?`<p>${esc(i.details)}</p>`:""}
+  const rep = reports[i.id];
+  const flag = admin && !inAlert && rep ? `<div class="flag">⚑ ${rep.count} report${rep.count>1?"s":""}${rep.reasons.length?" · "+rep.reasons.map(r=>esc(REASONS[r]||r)).join(", "):""}</div>` : "";
+  const tools = admin && !inAlert ? `<div class="admin"><button class="mini" data-act="edit">Edit</button><button class="mini" data-act="delete">Delete</button>${rep||i.hidden?'<button class="mini" data-act="dismiss">Dismiss reports</button>':""}</div>` : "";
+  const more = inAlert ? "" : `<button class="more" data-act="report" aria-label="Report this idea"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>`;
+  return `<article class="card c${n%4}${i.hidden&&admin?" isHidden":""}" data-id="${esc(i.id)}" ${inAlert?"":'tabindex="0" role="button"'}>${more}${i.hidden&&admin&&!inAlert?'<span class="hiddenBadge">Hidden from everyone</span>':""}<h3>${esc(i.title)}</h3>${i.details?`<p>${esc(i.details)}</p>`:""}
     <div class="tags">${tags.map(t=>`<span>${t}</span>`).join("")}</div>${link}
-    <div class="by">Added by ${esc(i.submitted_by)}</div>${tools}</article>`;
+    <div class="by">Added by ${esc(i.submitted_by)}</div>${flag}${tools}</article>`;
 }
 
 function seg(group, map, allLabel){
@@ -265,7 +287,8 @@ function renderFilters(){
       ${cities.map(([k,v])=>`<option value="${esc(k)}">${esc(v)}</option>`).join("")}
     </select>
     ${seg("setting",{home:"Home",indoor:"Indoors",outdoor:"Outdoors"},"All")}
-    ${seg("cost",COSTS,"Any price")}`;
+    ${seg("cost",COSTS,"Any price")}
+    ${admin ? `<button class="toggle" id="repToggle" aria-pressed="${f.reported}">⚑ Reported (${ideas.filter(i=>reports[i.id]||i.hidden).length})</button>` : ""}`;
   document.getElementById("citySel").value = f.city;
 }
 
@@ -282,6 +305,7 @@ function render(){
 }
 
 document.getElementById("filters").addEventListener("click", e => {
+  if (e.target.closest("#repToggle")){ f.reported = !f.reported; return render(); }
   const b = e.target.closest(".seg button"); if (!b) return;
   f[b.dataset.g] = b.dataset.v || null; render();
 });
@@ -291,7 +315,13 @@ document.getElementById("board").addEventListener("click", e => {
   if (e.target.closest("a")) return;
   const c = e.target.closest(".card"); if (!c) return;
   const act = e.target.closest("[data-act]");
-  if (act) return act.dataset.act === "edit" ? openWizard(byId(c.dataset.id)) : confirmDelete(byId(c.dataset.id));
+  if (act){
+    const idea = byId(c.dataset.id), a = act.dataset.act;
+    if (a==="edit") return openWizard(idea);
+    if (a==="delete") return confirmDelete(idea);
+    if (a==="report") return reportFlow(idea);
+    if (a==="dismiss") return dismissReports(idea);
+  }
   showOne(byId(c.dataset.id), false);
 });
 document.getElementById("board").addEventListener("keydown", e => {
@@ -325,6 +355,32 @@ function confirmDelete(idea, err=""){
     }
     ideas = ideas.filter(i => i !== idea); shuf.close(); render();
   };
+}
+
+// Reporting
+function reportFlow(idea){
+  if (reportedHere().includes(String(idea.id)))
+    return openAlert(`<div class="tm"><h2>Already reported</h2><p class="msg">Thanks, you've already flagged this idea from this device.</p></div><div class="acts"><button class="pill grey" id="closeS">OK</button></div>`);
+  openAlert(`<div class="tm"><h2>Report this idea?</h2><p class="msg">If it gets reported twice, it's hidden until a manager reviews it.</p></div>
+    <div class="acts">${Object.entries(REASONS).map(([k,v])=>`<button class="pill reason" data-r="${k}">${v}</button>`).join("")}<button class="pill grey" id="closeS">Cancel</button></div>`);
+  document.querySelectorAll("#shufBody [data-r]").forEach(b => b.onclick = async () => {
+    b.disabled = true;
+    if (!DEMO){
+      const {error} = await db.from("reports").insert({idea_id: idea.id, reason: b.dataset.r});
+      if (error){ console.error(error); return openAlert(`<div class="tm"><h2>Couldn't send report</h2><p class="msg">Check your connection and try again.</p></div><div class="acts"><button class="pill grey" id="closeS">OK</button></div>`); }
+    }
+    store.set("myg-reported", JSON.stringify([...reportedHere(), String(idea.id)]));
+    openAlert(`<div class="tm"><h2>Thanks for letting us know</h2><p class="msg">A manager will take a look.</p></div><div class="acts"><button class="pill blue" id="closeS">Done</button></div>`);
+    if (admin) load();
+  });
+}
+async function dismissReports(idea){
+  if (!DEMO){
+    const a = await db.from("reports").delete().eq("idea_id", idea.id);
+    const b = await db.from("date_ideas").update({hidden:false, report_count:0}).eq("id", idea.id).select();
+    if (a.error || b.error || !b.data.length){ console.error(a.error||b.error); return openAlert(`<div class="tm"><h2>Couldn't dismiss</h2><p class="msg">Make sure you're signed in as the manager.</p></div><div class="acts"><button class="pill grey" id="closeS">OK</button></div>`); }
+  }
+  delete reports[idea.id]; idea.hidden = false; idea.report_count = 0; render();
 }
 
 // Add / edit sheet
@@ -402,7 +458,7 @@ function openWizard(idea=null){
 }
 document.getElementById("addBtn").onclick = () => openWizard();
 wiz.addEventListener("click", e => { if (e.target === wiz) wiz.close(); });
-load();
+if (DEMO) load();
 </script>
 </body>
 </html>
